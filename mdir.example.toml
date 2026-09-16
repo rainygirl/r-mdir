@@ -1,0 +1,17 @@
+# macOS: ~/Library/Application Support/mdir/config.toml
+# Linux/Haiku: ~/.config/mdir/config.toml  (또는 MDIR_CONFIG=경로)
+
+[remote.aws]
+kind = "s3"
+region = "ap-northeast-2"
+# access_key_id / secret_access_key를 생략하면 ~/.aws 자격 증명을 사용합니다.
+
+[remote.cloudflare]
+kind = "r2"
+region = "auto"
+endpoint = "https://ACCOUNT_ID.r2.cloudflarestorage.com"
+access_key_id = "YOUR_R2_ACCESS_KEY"
+secret_access_key = "YOUR_R2_SECRET_KEY"
+# bucket = "한 버킷만 보이게 하려면 지정"
+path_style = true
+

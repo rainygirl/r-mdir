@@ -1,0 +1,8 @@
+# Rust 빌드 산출물 (cargo build/test/zigbuild/haiku 교차 빌드 전부 포함)
+/target/
+
+# 로컬 macOS 잡동사니
+.DS_Store
+
+# R2/S3 자격 증명이 든 임시 테스트 설정 (실수로 커밋되지 않도록)
+.mdir-test.toml
