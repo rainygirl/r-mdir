@@ -352,7 +352,7 @@ fn centered(area: Rect, width: u16, height: u16) -> Rect {
 fn help(f: &mut Frame, area: Rect) {
     let popup = centered(area, 62, 20);
     f.render_widget(Clear, popup);
-    let text = "키보드\n\n  영문/숫자       이름으로 빠른 이동\n  Backspace       검색어 지우기 / 상위 위치\n  ↑/↓             선택 이동\n  Enter/→         폴더 열기\n  ←               상위 위치\n  Tab             활성 패널 전환\n  F2              S3/R2 프로필 목록\n  F5              반대편 로컬 패널로 복사/다운로드\n  F7              로컬 폴더 생성\n  F8              로컬 항목 삭제\n  Ctrl+R          새로 고침\n  Esc / q / F10   종료\n\n아무 키나 누르면 닫힙니다.";
+    let text = "키보드\n\n  영문/숫자       이름으로 빠른 이동\n  Backspace       검색어 지우기 / 상위 위치\n  ↑/↓             선택 이동\n  Enter/→         폴더 열기 · 실행 파일이면 실행 후 Pause\n  ←               상위 위치\n  Tab             활성 패널 전환\n  F2              S3/R2 프로필 목록\n  F5              반대편 로컬 패널로 복사/다운로드\n  F7              로컬 폴더 생성\n  F8              로컬 항목 삭제\n  Ctrl+R          새로 고침\n  Esc / q / F10   종료\n\n아무 키나 누르면 닫힙니다.";
     f.render_widget(
         Paragraph::new(text)
             .wrap(Wrap { trim: false })
@@ -433,6 +433,7 @@ mod tests {
             is_dir: false,
             size: 0,
             modified: String::new(),
+            is_executable: false,
         };
         assert_eq!(
             display_name_parts(&entry),
@@ -454,6 +455,7 @@ mod tests {
             is_dir: true,
             size: 0,
             modified: String::new(),
+            is_executable: false,
         };
         assert_eq!(display_name_parts(&entry), ("..".into(), "Up".into()));
     }

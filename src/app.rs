@@ -21,6 +21,8 @@ pub struct Entry {
     pub is_dir: bool,
     pub size: u64,
     pub modified: String,
+    /// 로컬 파일에 실행 권한 비트가 있는지. 원격 항목이나 폴더는 항상 false.
+    pub is_executable: bool,
 }
 
 #[derive(Clone)]
@@ -66,6 +68,10 @@ pub struct App {
     pub error: Option<String>,
     pub search: String,
     pub right_local_path: PathBuf,
+    /// Enter로 실행 파일을 선택하면 여기에 경로가 채워진다. 터미널 화면을 통째로
+    /// 다루는 작업이라 App::run()의 메인 루프에서, terminal에 접근할 수 있는
+    /// 곳에서 꺼내 처리한다.
+    pub pending_run: Option<PathBuf>,
 }
 
 impl App {
@@ -91,6 +97,7 @@ impl App {
             error: None,
             search: String::new(),
             right_local_path: cwd,
+            pending_run: None,
         }
     }
 
@@ -105,6 +112,12 @@ impl App {
             if event::poll(Duration::from_millis(100))? {
                 if let Event::Key(key) = event::read()? {
                     self.handle_key(key).await;
+                    if let Some(path) = self.pending_run.take() {
+                        if let Err(e) = self.run_and_pause(terminal, &path).await {
+                            self.error = Some(format!("오류: {e:#}"));
+                        }
+                        self.refresh_with_twin(self.active).await.ok();
+                    }
                 }
             }
         }
@@ -271,6 +284,7 @@ impl App {
                     is_dir: true,
                     size: 0,
                     modified: "S3 호환 원격 저장소".into(),
+                    is_executable: false,
                 })
                 .collect(),
             Location::RemoteRoot { remote } => remote
@@ -299,6 +313,7 @@ impl App {
                     is_dir: true,
                     size: 0,
                     modified: String::new(),
+                    is_executable: false,
                 },
             );
         }
@@ -322,7 +337,11 @@ impl App {
             return self.up().await;
         }
         if !entry.is_dir {
-            self.status = format!("{} · {}", entry.name, human_size(entry.size));
+            if entry.is_executable && matches!(self.panels[idx].location, Location::Local(_)) {
+                self.pending_run = Some(entry.path);
+            } else {
+                self.status = format!("{} · {}", entry.name, human_size(entry.size));
+            }
             return Ok(());
         }
         self.panels[idx].location = match self.panels[idx].location.clone() {
@@ -351,6 +370,65 @@ impl App {
         };
         self.panels[idx].selected = 0;
         self.refresh(idx).await
+    }
+
+    /// TUI 화면을 잠시 내려놓고 실행 권한이 있는 파일을 실제 터미널에서 그대로
+    /// 돌린다. 프로그램이 끝나면 종료 결과를 보여 주고 아무 키나 눌러야 R Mdir
+    /// 화면으로 돌아온다 (실행 결과를 놓치지 않도록 하는 Pause).
+    async fn run_and_pause(
+        &mut self,
+        terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
+        path: &Path,
+    ) -> Result<()> {
+        use crossterm::{
+            event::{DisableMouseCapture, EnableMouseCapture},
+            terminal::{
+                EnterAlternateScreen, LeaveAlternateScreen, SetTitle, disable_raw_mode,
+                enable_raw_mode,
+            },
+        };
+        use std::io::Write;
+
+        disable_raw_mode()?;
+        crossterm::execute!(
+            terminal.backend_mut(),
+            LeaveAlternateScreen,
+            DisableMouseCapture
+        )?;
+
+        let dir = path.parent().unwrap_or(Path::new("/"));
+        println!("$ {}\r", path.display());
+        io::stdout().flush().ok();
+        let run = std::process::Command::new(path).current_dir(dir).status();
+        let summary = match &run {
+            Ok(status) if status.success() => "정상 종료".to_string(),
+            Ok(status) => status
+                .code()
+                .map(|code| format!("종료 코드 {code}"))
+                .unwrap_or_else(|| "시그널로 종료됨".into()),
+            Err(e) => format!("실행 실패: {e}"),
+        };
+        println!("\r\n[ {summary} — 아무 키나 누르면 R Mdir로 돌아갑니다 ]\r");
+        io::stdout().flush().ok();
+
+        // Enter 하나로 계속 실행되는 것을 막기 위해 raw 모드에서 실제 키 입력 하나를 기다린다.
+        enable_raw_mode()?;
+        loop {
+            if let Event::Key(_) = event::read()? {
+                break;
+            }
+        }
+
+        crossterm::execute!(
+            terminal.backend_mut(),
+            EnterAlternateScreen,
+            EnableMouseCapture,
+            SetTitle("R Mdir")
+        )?;
+        terminal.clear()?;
+
+        self.status = format!("{} · {summary}", path.display());
+        Ok(())
     }
 
     async fn up(&mut self) -> Result<()> {
@@ -494,7 +572,20 @@ fn remote_entry(e: RemoteEntry) -> Entry {
         is_dir: e.is_dir,
         size: e.size,
         modified: e.modified,
+        is_executable: false,
     }
+}
+
+/// 폴더가 아닌 파일에 실행 권한 비트(user/group/other 중 하나)가 있는지 본다.
+#[cfg(unix)]
+fn is_executable(meta: &std::fs::Metadata) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    !meta.is_dir() && meta.permissions().mode() & 0o111 != 0
+}
+
+#[cfg(not(unix))]
+fn is_executable(_meta: &std::fs::Metadata) -> bool {
+    false
 }
 
 fn local_entries(path: &Path) -> Result<Vec<Entry>> {
@@ -517,6 +608,7 @@ fn local_entries(path: &Path) -> Result<Vec<Entry>> {
             is_dir: meta.is_dir(),
             size: meta.len(),
             modified,
+            is_executable: is_executable(&meta),
         });
     }
     out.sort_by_key(|e| (!e.is_dir, e.name.to_lowercase()));
@@ -626,6 +718,7 @@ mod tests {
                 is_dir: true,
                 size: 0,
                 modified: String::new(),
+                is_executable: false,
             },
             Entry {
                 name: "Documents".into(),
@@ -633,6 +726,7 @@ mod tests {
                 is_dir: true,
                 size: 0,
                 modified: String::new(),
+                is_executable: false,
             },
             Entry {
                 name: "Workspace".into(),
@@ -640,6 +734,7 @@ mod tests {
                 is_dir: true,
                 size: 0,
                 modified: String::new(),
+                is_executable: false,
             },
         ];
         app.search = "wo".into();
