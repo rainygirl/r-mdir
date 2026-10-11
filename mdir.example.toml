@@ -1,5 +1,5 @@
 # macOS: ~/Library/Application Support/mdir/config.toml
-# Linux/Haiku: ~/.config/mdir/config.toml  (또는 MDIR_CONFIG=경로)
+# Linux/RenkuOS: ~/.config/mdir/config.toml  (또는 MDIR_CONFIG=경로)
 
 [remote.aws]
 kind = "s3"

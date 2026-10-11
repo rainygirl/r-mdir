@@ -1,4 +1,4 @@
-# Rust 빌드 산출물 (cargo build/test/zigbuild/haiku 교차 빌드 전부 포함)
+# Rust 빌드 산출물 (cargo build/test/zigbuild/RenkuOS 교차 빌드 전부 포함)
 /target/
 
 # 로컬 macOS 잡동사니

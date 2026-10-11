@@ -27,7 +27,7 @@ pub struct RemoteEntry {
 impl Remote {
     pub async fn connect(name: String, cfg: RemoteConfig) -> Result<Self> {
         let region = Region::new(cfg.region.clone().unwrap_or_else(|| "auto".into()));
-        // aws-lc 대신 ring을 쓴다. 순수 Rust에 가까워 Haiku 등 교차 빌드가 쉽다.
+        // aws-lc 대신 ring을 쓴다. 순수 Rust에 가까워 RenkuOS 등 교차 빌드가 쉽다.
         let http_client = aws_smithy_http_client::Builder::new()
             .tls_provider(Provider::Rustls(CryptoMode::Ring))
             .build_https();

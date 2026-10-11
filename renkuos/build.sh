@@ -1,5 +1,5 @@
 #!/bin/sh
-# Haiku 교차 빌드. haiku/cross-compiler 컨테이너 안에서 실행된다.
+# RenkuOS 교차 빌드. haiku/cross-compiler 컨테이너 안에서 실행된다.
 #   ARCH=x86_64 (기본, 이미지 x86_64-r1beta4)   -> x86_64-unknown-haiku
 #   ARCH=x86    (이미지 x86_gcc2h-r1beta4)      -> i686-unknown-haiku (32비트, x86_gcc2 하이브리드용)
 set -eu

@@ -4,7 +4,7 @@
 
 ![Haiku R1~beta6 x86 Terminal에서 실행한 R Mdir](screenshots/haiku-x86.png)
 
-macOS, Linux, Haiku 터미널에서 동작합니다. 위 캡처는 Haiku R1~beta6(x86, 32비트) Terminal 화면입니다.
+macOS, Linux, RenkuOS 터미널에서 동작합니다. 위 캡처는 Haiku R1~beta6(x86, 32비트) Terminal 화면입니다.
 
 ## 설치 및 실행
 
@@ -25,7 +25,7 @@ cargo build --release
 |---|---|
 | macOS | `~/Library/Application Support/mdir/config.toml` |
 | Linux | `~/.config/mdir/config.toml` |
-| Haiku | `/boot/home/.config/mdir/config.toml` |
+| RenkuOS | `/boot/home/.config/mdir/config.toml` |
 
 환경 변수 `MDIR_CONFIG`에 파일 경로를 넣으면 그 파일을 대신 읽습니다. 정확한 경로는 `F2` 안내 창에도 표시됩니다.
 

@@ -2,7 +2,7 @@
 name = "mdir"
 version = "0.1.0"
 edition = "2024"
-description = "R Mdir: Mdir-inspired two-pane terminal file manager for macOS, Linux, Haiku, S3 and R2"
+description = "R Mdir: Mdir-inspired two-pane terminal file manager for macOS, Linux, RenkuOS, S3 and R2"
 license = "MIT"
 
 [dependencies]
@@ -32,6 +32,6 @@ path = "src/main.rs"
 
 [target.'cfg(target_os = "haiku")'.dependencies]
 libc = "0.2"
-# Haiku는 mio가 poll(2) 백엔드를 쓰는데, 이벤트 후 fd 관심을 지우고 do_io 재등록을 기대한다.
+# RenkuOS(target_os = "haiku")에서는 mio가 poll(2) 백엔드를 쓰는데, 이벤트 후 fd 관심을 지우고 do_io 재등록을 기대한다.
 # crossterm은 fd를 직접 읽어 재등록하지 않으므로 첫 입력 이후 키가 오지 않는다. mio 대신 /dev/tty 폴링을 쓴다.
 crossterm = { version = "0.29", features = ["use-dev-tty"] }
